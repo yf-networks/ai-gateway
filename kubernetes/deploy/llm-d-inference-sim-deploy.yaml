@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-llama3-8b-instruct
+  namespace: default
+  labels:
+    app.kubernetes.io/name: vllm-llama3-8b-instruct
+    app.kubernetes.io/instance: vllm-llama3-8b-instruct
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: vllm-llama3-8b-instruct
+  template:
+    metadata:
+      labels:
+        app: vllm-llama3-8b-instruct
+    spec:
+      containers:
+      - args:
+        - --model
+        - meta-llama/Llama-3.1-8B-Instruct
+        - --port
+        - "8000"
+        - --max-loras
+        - "2"
+        - --lora-modules
+        - '{"name": "food-review-1"}'
+        image: ghcr.nju.edu.cn/llm-d/llm-d-inference-sim:latest
+        imagePullPolicy: IfNotPresent
+        name: vllm-sim
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-llama3-8b-instruct-svc
+  namespace: default
+  labels:
+    app: vllm-llama3-8b-instruct
+    bfe-product: AI_product 
+
+spec:
+  selector:
+    app: vllm-llama3-8b-instruct
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+      name: http
+  type: ClusterIP

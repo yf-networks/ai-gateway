@@ -1,0 +1,197 @@
+# Copyright(c) 2024 Beijing Yingfei Networks Technology Co.Ltd. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+ARG BFE_IMAGE=ghcr.io/bfenetworks/bfe:v1.8.2
+ARG API_IMAGE=ghcr.io/yf-networks/ai-gateway-api:v0.0.2
+
+FROM --platform=${BUILDPLATFORM} ${BFE_IMAGE} AS bfe
+FROM --platform=${BUILDPLATFORM} ${API_IMAGE} AS api
+
+FROM alpine:3.19
+
+ARG VARIANT=prod
+ARG ALPINE_MIRROR=
+
+RUN set -ex; \
+    if [ -n "${ALPINE_MIRROR}" ]; then \
+        echo "${ALPINE_MIRROR}/v3.19/main" > /etc/apk/repositories; \
+        echo "${ALPINE_MIRROR}/v3.19/community" >> /etc/apk/repositories; \
+    fi; \
+    apk add --no-cache ca-certificates tini mysql-client mariadb-connector-c; \
+    if [ "${VARIANT}" = "debug" ]; then \
+        apk add --no-cache bash curl wget vim; \
+    fi
+
+RUN set -ex; \
+    mkdir -p /home/work/api-server/conf \
+    && mkdir -p /home/work/api-server/log \
+    && mkdir -p /home/work/api-server/static \
+    && mkdir -p /home/work/bfe/bin \
+    && mkdir -p /home/work/bfe/conf \
+    && mkdir -p /home/work/bfe/log \
+    && mkdir -p /home/work/conf-agent/conf \
+    && mkdir -p /home/work/conf-agent/log
+
+COPY --from=bfe /home/work/bfe/bin/bfe /home/work/bfe/bin/bfe
+COPY --from=bfe /home/work/bfe/conf /home/work/bfe/conf
+COPY --from=bfe /home/work/conf-agent/conf-agent /home/work/conf-agent/conf-agent
+
+COPY --from=api /home/work/api-server/api-server /home/work/api-server/api-server
+COPY --from=api /home/work/api-server/conf /home/work/api-server/conf
+COPY --from=api /home/work/api-server/static /home/work/api-server/static
+COPY db_ddl.sql /home/work/db_ddl.sql
+
+RUN set -ex; \
+    if [ -f /home/work/bfe/conf/server_data_conf/name_conf.data ] && [ ! -L /home/work/bfe/conf/server_data_conf/name_conf.data ]; then \
+        mv /home/work/bfe/conf/server_data_conf/name_conf.data /home/work/bfe/conf/name_conf.data; \
+        ln -sf /home/work/bfe/conf/name_conf.data /home/work/bfe/conf/server_data_conf/name_conf.data; \
+    fi
+
+RUN cat > /home/work/conf-agent/conf/conf-agent.toml <<'EOF'
+[Logger]
+LogDir      = "./log/"
+LogName     = "conf_agent"
+LogLevel    = "INFO"
+RotateWhen  = "MIDNIGHT"
+BackupCount = 2
+Format      = "[%D %T] [%L] [%S] %M"
+StdOut      = false
+
+[Basic]
+BFECluster              = "BFE-AI_product.szyf"
+BFEConfDir              = "/home/work/bfe/conf"
+BFEMonitorPort          = 8421
+BFEReloadTimeoutMs      = 1500
+
+ReloadIntervalMs        = 5000
+
+ConfServer              = "http://127.0.0.1:8183"
+ConfTaskHeaders         = {"Authorization" = "Token c5QFb-MrlKktJbOid2M3"}
+ConfTaskTimeoutMs       = 1500
+
+ExtraFileServer         = "http://127.0.0.1:8183/inner-api/v1/configs/extra_files/"
+ExtraFileTaskHeaders    = {"Authorization" = "Token c5QFb-MrlKktJbOid2M3"}
+ExtraFileTaskTimeoutMs  = 1500
+
+[Reloaders.mod_ai_token_auth]
+BFEReloadAPI = "/reload/mod_ai_token_auth"
+ReloadFile = "token_rule.data"
+CopyFiles = ["token_rule.data", "mod_ai_token_auth.conf"]
+[[Reloaders.mod_ai_token_auth.NormalFileTasks]]
+ConfAPI = "/inner-api/v1/configs/mod-api-key"
+ConfFileName = "token_rule.data"
+
+[Reloaders.server_data_conf]
+CopyFiles = ["cluster_conf.data", "host_rule.data", "name_conf.data", "route_rule.data", "vip_rule.data"]
+[[Reloaders.server_data_conf.MultiKeyFileTasks]]
+ConfAPI = "/inner-api/v1/configs/tls_conf/server_data_conf"
+Key2ConfFile = {"HostTable" = "host_rule.data", "RouteTable" = "route_rule.data", "ClusterConf" = "cluster_conf.data"}
+
+[Reloaders.cluster_conf]
+BFEReloadAPI = "/reload/gslb_data_conf"
+CopyFiles = ["cluster_table.data", "gslb.data"]
+[[Reloaders.cluster_conf.NormalFileTasks]]
+ConfAPI = "/inner-api/v1/configs/gslb_data/cluster_table"
+ConfFileName = "cluster_table.data"
+[[Reloaders.cluster_conf.NormalFileTasks]]
+ConfAPI = "/inner-api/v1/configs/gslb_data/gslb"
+ConfFileName = "gslb.data"
+EOF
+
+RUN cat > /home/work/entrypoint.sh <<'SCRIPT'
+#!/bin/sh
+set -e
+
+API_PID=""
+CONF_PID=""
+BFE_PID=""
+
+cleanup() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Received signal, shutting down..."
+
+    if [ -n "$API_PID" ]; then
+        kill -TERM "$API_PID" 2>/dev/null || true
+    fi
+    if [ -n "$CONF_PID" ]; then
+        kill -TERM "$CONF_PID" 2>/dev/null || true
+    fi
+    if [ -n "$BFE_PID" ]; then
+        kill -TERM "$BFE_PID" 2>/dev/null || true
+    fi
+
+    wait 2>/dev/null || true
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Shutdown complete"
+    exit 0
+}
+
+trap cleanup TERM INT
+
+API_CONF="/home/work/api-server/conf/ai_gateway_api.toml"
+
+DB_ADDR=$(grep -E '^\s*Addr\s*=' "$API_CONF" | head -1 | sed -E 's/.*=\s*"([^"]+)".*/\1/')
+DB_USER=$(grep -E '^\s*User\s*=' "$API_CONF" | head -1 | sed -E 's/.*=\s*"([^"]+)".*/\1/')
+DB_PASS=$(grep -E '^\s*Passwd\s*=' "$API_CONF" | head -1 | sed -E 's/.*=\s*"([^"]+)".*/\1/')
+DB_NAME="open_bfe"
+
+DB_HOST=$(echo "$DB_ADDR" | cut -d: -f1)
+DB_PORT=$(echo "$DB_ADDR" | cut -d: -f2)
+
+echo "[$(date +'%Y-%m-%d %H:%M:%S')] Checking database $DB_HOST:$DB_PORT/$DB_NAME..."
+sleep 2
+
+TABLE_COUNT=$(mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" -sN \
+    -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='users';" 2>/dev/null || echo "0")
+
+if [ "$TABLE_COUNT" = "0" ]; then
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Database not initialized, running db_ddl.sql..."
+    mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" < /home/work/db_ddl.sql
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Database initialization complete"
+else
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Database already initialized, skipping"
+fi
+
+if [ ! -f /home/work/bfe/conf/name_conf.data ]; then
+    echo '{"Version":"init version","Config":{}}' > /home/work/bfe/conf/name_conf.data
+fi
+ln -sf ../name_conf.data /home/work/bfe/conf/server_data_conf/name_conf.data
+
+echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting api-server..."
+cd /home/work/api-server
+nohup ./api-server -c ./conf/ -sc ai_gateway_api.toml -l ./log \
+    </dev/null >./log/stdout.log 2>&1 &
+API_PID=$!
+
+echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting conf-agent..."
+cd /home/work/conf-agent
+nohup ./conf-agent -c ./conf \
+    </dev/null >./log/stdout.log 2>&1 &
+CONF_PID=$!
+
+echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting bfe..."
+cd /home/work/bfe/bin
+nohup ./bfe -c ../conf/ -l ../log/ \
+    </dev/null >../log/stdout.log 2>&1 &
+BFE_PID=$!
+
+echo "[$(date +'%Y-%m-%d %H:%M:%S')] All processes started, waiting..."
+wait
+SCRIPT
+
+RUN chmod +x /home/work/entrypoint.sh
+
+EXPOSE 8080 8443 8421 8183 8284
+
+WORKDIR /home/work
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["/home/work/entrypoint.sh"]
