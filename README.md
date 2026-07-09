@@ -23,7 +23,7 @@ AI Gateway consists of the following core components:
 
 ## Key Features
 
-- **AI route management**: Route configuration for multiple AI model providers (OpenAI, DeepSeek, Anthropic, Google Gemini, etc.)
+- **AI route management**: Route configuration for multiple AI model providers (OpenAI, DeepSeek, Qwen, etc.)
 - **API key management**: Create, delete, and validate API keys for AI services
 - **Domain management**: Bind domains and configure routing rules
 - **Certificate management**: Upload and manage TLS certificates

@@ -23,7 +23,7 @@ AI Gateway 包含如下核心组件：
 
 ## 主要功能
 
-- **AI 路由管理**：支持多 AI 模型提供商（OpenAI、DeepSeek、Anthropic、Google Gemini 等）的路由配置
+- **AI 路由管理**：支持多 AI 模型提供商（OpenAI、DeepSeek、千问等）的路由配置
 - **API Key 管理**：AI 服务的 API Key 创建、删除与校验
 - **域名管理**：域名绑定与路由规则配置
 - **证书管理**：TLS 证书的上传与管理
