@@ -50,7 +50,7 @@ COPY --from=bfe /home/work/conf-agent/conf-agent /home/work/conf-agent/conf-agen
 COPY --from=api /home/work/api-server/api-server /home/work/api-server/api-server
 COPY --from=api /home/work/api-server/conf /home/work/api-server/conf
 COPY --from=api /home/work/api-server/static /home/work/api-server/static
-COPY db_ddl.sql /home/work/db_ddl.sql
+COPY api_db_ddl.sql /home/work/db_ddl.sql
 
 RUN set -ex; \
     if [ -f /home/work/bfe/conf/server_data_conf/name_conf.data ] && [ ! -L /home/work/bfe/conf/server_data_conf/name_conf.data ]; then \
@@ -73,16 +73,13 @@ BFECluster              = "BFE-AI_product.szyf"
 BFEConfDir              = "/home/work/bfe/conf"
 BFEMonitorPort          = 8421
 BFEReloadTimeoutMs      = 1500
-
 ReloadIntervalMs        = 5000
-
 ConfServer              = "http://127.0.0.1:8183"
 ConfTaskHeaders         = {"Authorization" = "Token c5QFb-MrlKktJbOid2M3"}
 ConfTaskTimeoutMs       = 1500
-
 ExtraFileServer         = "http://127.0.0.1:8183/inner-api/v1/configs/extra_files/"
 ExtraFileTaskHeaders    = {"Authorization" = "Token c5QFb-MrlKktJbOid2M3"}
-ExtraFileTaskTimeoutMs  = 1500
+ExtraFileTaskTimeoutMs  = 2500
 
 [Reloaders.mod_ai_token_auth]
 BFEReloadAPI = "/reload/mod_ai_token_auth"
@@ -148,7 +145,7 @@ DB_HOST=$(echo "$DB_ADDR" | cut -d: -f1)
 DB_PORT=$(echo "$DB_ADDR" | cut -d: -f2)
 
 echo "[$(date +'%Y-%m-%d %H:%M:%S')] Checking database $DB_HOST:$DB_PORT/$DB_NAME..."
-sleep 2
+sleep 3
 
 TABLE_COUNT=$(mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" -sN \
     -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='users';" 2>/dev/null || echo "0")

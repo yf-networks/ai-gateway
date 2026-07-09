@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: ghcr.io/cc14514/mysql:8
+    container_name: mysql.ai-gateway-system
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: open_bfe
+    ports:
+      - "3306:3306"
+    # Persistent storage (uncomment for production, replace ./mysql-data with a persistent path):
+    # volumes:
+    #   - ./mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "--password=root123", "--silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: ghcr.io/cc14514/redis:6.2
+    container_name: redis.ai-gateway-system
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ai-gateway:
+    image: ghcr.io/yf-networks/ai-gateway:latest
+    container_name: ai-gateway
+    ports:
+      - "8080:8080"
+      - "8183:8183"
+    volumes:
+      - ./conf/ai_gateway_api.toml:/home/work/api-server/conf/ai_gateway_api.toml
+      - ./conf/name_conf.data:/home/work/api-server/conf/name_conf.data
+      - ./conf/name_conf.data:/home/work/bfe/conf/name_conf.data
+      - ./conf/bfe.conf:/home/work/bfe/conf/bfe.conf
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Test backend simulator (not a base service, for functional validation only).
+  # After startup, configure a forwarding rule in Dashboard to verify end-to-end routing.
+  vllm-sim:
+    image: ghcr.io/cc14514/llm-simulator:latest
+    container_name: vllm-sim
+    ports:
+      - "8000:8000"
+    profiles:
+      - test

@@ -34,86 +34,72 @@ AI Gateway 包含如下核心组件：
 
 ## 部署方式
 
-AI Gateway 支持两种部署方式：
-
 | 方式 | 命令 | 适用场景 |
 |---|---|---|
-| **容器部署** | `docker run` | 开发、演示、小规模部署 |
+| **容器部署** | `docker compose up -d` | 开发、演示、小规模部署 |
 | **Kubernetes** | `kubectl apply -k kubernetes/` | 生产环境、集群部署 |
-
-### 容器部署（All-in-One Docker）
-
-单个容器集成 BFE + AI Gateway API + Conf Agent，支持数据库自动初始化。
-
-**前置条件**：Docker、MySQL 8、Redis 6.2
-
-```bash
-# 拉取镜像
-docker pull ghcr.io/yf-networks/ai-gateway:latest
-
-# 准备配置文件（参见 conf/ 中的模板文件）
-# 修改 conf/ai_gateway_api.toml 中的数据库连接信息
-
-# 启动
-docker run -d --name ai-gateway \
-  -p 8080:8080 -p 8183:8183 \
-  -v $(pwd)/conf/ai_gateway_api.toml:/home/work/api-server/conf/ai_gateway_api.toml \
-  -v $(pwd)/conf/name_conf.data:/home/work/api-server/conf/name_conf.data \
-  -v $(pwd)/conf/name_conf.data:/home/work/bfe/conf/name_conf.data \
-  -v $(pwd)/conf/bfe.conf:/home/work/bfe/conf/bfe.conf \
-  ghcr.io/yf-networks/ai-gateway:latest
-```
-
-访问 Dashboard：`http://localhost:8183`（admin / admin）
-
-### Kubernetes
-
-**前置条件**：kubectl >= 1.20，集群管理权限
-
-```bash
-# 一键部署所有组件
-kubectl apply -k kubernetes/
-
-# 验证
-kubectl get pods -n ai-gateway-system
-```
-
-访问 Dashboard：`http://{NodeIP}:30183`（admin / admin）
-
-完整部署指南及架构图请参阅 [Kubernetes 部署文档](./kubernetes/README.md)。
 
 ## 快速开始
 
-### 1. 克隆仓库
+### Docker Compose（推荐，免配置）
+
+`docker-compose.yml` 集成 MySQL 8 + Redis 6.2 + AI Gateway，配置已预置 Docker 网络 DNS，开箱即用。
+
+| 容器 | DNS 名称 (预置) | 端口 |
+|---|---|---|
+| MySQL 8 | `mysql.ai-gateway-system` | 3306 |
+| Redis 6.2 | `redis.ai-gateway-system` | 6379 |
 
 ```bash
 git clone https://github.com/yf-networks/ai-gateway.git
 cd ai-gateway
+docker compose up -d
 ```
 
-### 2. 修改配置
+访问 Dashboard：`http://localhost:8183`（admin / admin）
 
-复制并编辑 `conf/` 目录下的配置文件：
+**附带测试模拟器**（端到端路由验证）：
 
-| 文件 | 用途 |
+```bash
+docker compose --profile test up -d
+```
+
+额外启动 `vllm-sim`（模拟 LLM 后端，端口 8000），在 Dashboard 中配置转发规则即可验证路由。
+
+> `vllm-sim` 仅用于功能测试。compose 中的 MySQL 无持久化存储，生产环境请取消 `docker-compose.yml` 中 `volumes` 的注释以挂载数据目录，或使用外部 MySQL。
+
+```bash
+# 常用操作
+docker compose stop                     # 停止所有服务
+docker compose start                    # 重启所有服务
+docker compose down                     # 停止并删除容器
+docker compose --profile test up -d     # 初始部署后追加模拟器
+docker compose restart ai-gateway       # 修改配置后重启
+```
+
+### 手动部署（自行准备 MySQL / Redis）
+
+1. **修改配置** — 编辑 `conf/` 文件，填入实际地址：
+
+| 文件 | 配置项 |
 |---|---|
-| `conf/ai_gateway_api.toml` | 数据库、Redis 及 API Server 配置 |
-| `conf/bfe.conf` | BFE 流量网关配置 |
-| `conf/name_conf.data` | Redis 实例发现（API 与 BFE 共享） |
+| `conf/ai_gateway_api.toml` | `[Databases.bfe_db]` 下的 `Addr`、`User`、`Passwd` |
+| `conf/name_conf.data` | Redis 实例的 `Host`、`Port` |
+| `conf/bfe.conf` | BFE 端口和模块（通常无需修改） |
 
-`conf/ai_gateway_api.toml` 示例（最少修改项）：
+`conf/ai_gateway_api.toml` 示例：
 
 ```toml
 [Databases.bfe_db]
-Addr   = "192.168.1.3:3306"      # MySQL 地址
-User   = "root"                  # MySQL 用户名
-Passwd = "your_password"         # MySQL 密码
+Addr   = "192.168.1.3:3306"
+User   = "root"
+Passwd = "your_password"
 
 [RedisConf]
-Bns = "BFE.poc-redis-wx"         # Redis BNS 名称
+Bns = "BFE.poc-redis-wx"
 ```
 
-`conf/name_conf.data` 示例（Redis 实例）：
+`conf/name_conf.data` 示例：
 
 ```json
 {
@@ -128,55 +114,58 @@ Bns = "BFE.poc-redis-wx"         # Redis BNS 名称
 }
 ```
 
-### 3. 选择部署方式
+2. **启动**：
 
-- **容器部署**：参见上方[容器部署](#容器部署all-in-one-docker)章节
-- **Kubernetes**：参见上方[Kubernetes](#kubernetes)章节
+```bash
+docker run -d --name ai-gateway \
+  -p 8080:8080 -p 8183:8183 \
+  -v $(pwd)/conf/ai_gateway_api.toml:/home/work/api-server/conf/ai_gateway_api.toml \
+  -v $(pwd)/conf/name_conf.data:/home/work/api-server/conf/name_conf.data \
+  -v $(pwd)/conf/name_conf.data:/home/work/bfe/conf/name_conf.data \
+  -v $(pwd)/conf/bfe.conf:/home/work/bfe/conf/bfe.conf \
+  ghcr.io/yf-networks/ai-gateway:latest
+```
+
+Dashboard：`http://localhost:8183`（admin / admin）
+
+### Kubernetes
+
+```bash
+kubectl apply -k kubernetes/
+kubectl get pods -n ai-gateway-system
+```
+
+Dashboard：`http://{NodeIP}:30183`（admin / admin）。详见 [K8s 部署文档](./kubernetes/README.md)。
 
 ## 从源码构建
 
-从各组件的已发布镜像构建 all-in-one 镜像：
-
 ```bash
-# 构建容器部署镜像
-make docker-standalone
-
-# 构建包含调试工具（curl、vim 等）的镜像
-make docker-standalone VARIANT=debug
-
-# 多架构推送
-make docker-standalone-push REGISTRY=ghcr.io/your-org
+make docker-standalone               # 构建容器镜像
+make docker-standalone VARIANT=debug # 含调试工具
+make docker-standalone-push REGISTRY=ghcr.io/your-org  # 多架构推送
 ```
 
-**构建参数**：
-
-| 参数 | 默认值 | 说明 |
-|---|---|---|
-| `BFE_IMAGE` | `ghcr.io/bfenetworks/bfe:v1.8.2` | BFE 镜像（提供 bfe + conf-agent） |
-| `API_IMAGE` | `ghcr.io/yf-networks/ai-gateway-api:v0.0.2` | API Server 镜像（提供 api-server + dashboard） |
-| `VARIANT` | `prod` | `prod` 或 `debug` |
+构建参数从 `VERSIONS.yaml` 自动读取，无需手动配置版本号。
 
 ## 版本管理
 
-本仓库作为 AI Gateway 的**产品级版本入口**。`VERSIONS.yaml` 文件定义了各子组件之间的版本对照表：
+本仓库是 AI Gateway 的**产品级版本入口**。`VERSIONS.yaml` 定义了经过验证的组件版本组合：
 
 ```yaml
-version: 0.2.0
+version: v0.1.0
 components:
   bfe:
     version: v1.8.2
-    source: image
     image: ghcr.io/bfenetworks/bfe:v1.8.2
     provides:
       - bfe
       - conf-agent
   ai-gateway-api:
     version: v0.0.2
-    source: image
     image: ghcr.io/yf-networks/ai-gateway-api:v0.0.2
 ```
 
-每个产品发版对应一组经过验证的组件版本组合。完整对照表参见 `VERSIONS.yaml`。
+更新 `VERSIONS.yaml` → 重新构建 → 打产品 tag 发布。
 
 ## 暴露端口
 
@@ -190,7 +179,7 @@ components:
 
 ## 贡献
 
-欢迎贡献代码！请参阅 [CONTRIBUTING.md](./CONTRIBUTING.md) 了解开发流程和规范。
+请参阅 [CONTRIBUTING.md](./CONTRIBUTING.md) 了解开发流程和规范。
 
 ## 许可证
 

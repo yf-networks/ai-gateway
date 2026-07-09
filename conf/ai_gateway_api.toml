@@ -33,10 +33,10 @@ StdOut      = false
 # see https://github.com/go-sql-driver/mysql/blob/master/dsn.go#L37
 [Databases.bfe_db]
 DBName               = "open_bfe"
-Addr                 = "192.168.1.3:3306"
+Addr                 = "mysql.ai-gateway-system:3306"
 Net                  = "tcp"
 User                 = "root"
-Passwd               = "12345678"
+Passwd               = "root123"
 MultiStatements      = true
 MaxAllowedPacket     = 67108864
 ParseTime            = true

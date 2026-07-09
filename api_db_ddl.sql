@@ -1,6 +1,8 @@
 DROP DATABASE IF EXISTS `open_bfe`;
 CREATE DATABASE open_bfe;
+
 USE open_bfe;
+
 -- create bfe_clusters
 DROP TABLE IF EXISTS `bfe_clusters`;
 CREATE TABLE `bfe_clusters` (
@@ -17,6 +19,7 @@ CREATE TABLE `bfe_clusters` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name_uni` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- create products
 DROP TABLE IF EXISTS `products`;
 CREATE TABLE `products` (
@@ -31,6 +34,7 @@ CREATE TABLE `products` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name_uni` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- create domains
 DROP TABLE IF EXISTS `domains`;
 CREATE TABLE `domains` (
@@ -47,6 +51,7 @@ CREATE TABLE `domains` (
   INDEX `product_id` (`product_id`),
   INDEX `type` (`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- create clusters
 DROP TABLE IF EXISTS `clusters`;
 CREATE TABLE `clusters` (
@@ -88,6 +93,8 @@ CREATE TABLE `clusters` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name_index` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 -- create lb_matrices
 DROP TABLE IF EXISTS `lb_matrices`;
 CREATE TABLE `lb_matrices` (
@@ -98,6 +105,7 @@ CREATE TABLE `lb_matrices` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`cluster_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- create sub_clusters
 DROP TABLE IF EXISTS `sub_clusters`;
 CREATE TABLE `sub_clusters` (
@@ -108,12 +116,15 @@ CREATE TABLE `sub_clusters` (
   `description` varchar(1024) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL DEFAULT "no desc",
   `bns_name_id` bigint(20) NOT NULL,
   `enabled` tinyint(1) NOT NULL DEFAULT '1',
+  `role` varchar(32) NOT NULL DEFAULT '',
   `created_at` datetime NOT NULL,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name_product_index` (`name`, `product_id`),
   INDEX `cluster_id` (`cluster_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 -- create pools
 DROP TABLE IF EXISTS `pools`;
 CREATE TABLE `pools` (
@@ -124,11 +135,15 @@ CREATE TABLE `pools` (
   `instance_detail` mediumtext,
   `type` tinyint(4) NOT NULL DEFAULT 1,
   `tag` tinyint(4) NOT NULL DEFAULT 0,
+  `role` varchar(32) NOT NULL DEFAULT 'COMMON',
+  `epp_server` mediumtext,
   `created_at` datetime NOT NULL,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name_uni` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 -- create route_basic_rules
 DROP TABLE IF EXISTS `route_basic_rules`;
 CREATE TABLE `route_basic_rules` (
@@ -143,6 +158,8 @@ CREATE TABLE `route_basic_rules` (
   PRIMARY KEY (`id`),
   INDEX `product_id` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 -- create route_advance_rules
 DROP TABLE IF EXISTS `route_advance_rules`;
 CREATE TABLE `route_advance_rules` (
@@ -157,6 +174,7 @@ CREATE TABLE `route_advance_rules` (
   PRIMARY KEY (`id`),
   INDEX `product_id` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- create forward_cases
 DROP TABLE IF EXISTS `route_cases`;
 CREATE TABLE `route_cases` (
@@ -174,6 +192,7 @@ CREATE TABLE `route_cases` (
   PRIMARY KEY (`id`),
   INDEX `product_id` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- create certificates
 DROP TABLE IF EXISTS `certificates`;
 CREATE TABLE `certificates` (
@@ -186,11 +205,13 @@ CREATE TABLE `certificates` (
   `cert_file_path` varchar(255) NOT NULL,
   `key_file_name` varchar(255) NOT NULL,
   `key_file_path` varchar(255) NOT NULL,
+
   `created_at` datetime NOT NULL,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`cert_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- create extra_files
 DROP TABLE IF EXISTS `extra_files`;
 CREATE TABLE `extra_files` (
@@ -206,6 +227,7 @@ CREATE TABLE `extra_files` (
   UNIQUE KEY `name_product` (`name`, `product_id`),
   INDEX `product_id` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 DROP TABLE IF EXISTS `config_versions`;
 CREATE TABLE `config_versions` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -216,6 +238,8 @@ CREATE TABLE `config_versions` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 -- create users
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
@@ -231,6 +255,7 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name_uni` (`name`, `type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- create user_products
 DROP TABLE IF EXISTS `user_products`;
 CREATE TABLE `user_products` (
@@ -240,6 +265,8 @@ CREATE TABLE `user_products` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`, `product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 -- create api_keys
 DROP TABLE IF EXISTS `api_keys`;
 CREATE TABLE api_keys (
@@ -258,6 +285,7 @@ CREATE TABLE api_keys (
   PRIMARY KEY (`id`),
   INDEX idx_product_name (product_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 comment = "api keys"; 
+
 -- create api_key_tokens
 DROP TABLE IF EXISTS `api_key_tokens`;
 CREATE TABLE api_key_tokens (
@@ -268,6 +296,7 @@ CREATE TABLE api_key_tokens (
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_key` (`api_key`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8 comment = "api-key存储表"; 
+
 -- create ai_route_rules
 DROP TABLE IF EXISTS `ai_route_rules`;
 CREATE TABLE `ai_route_rules` (
@@ -282,6 +311,7 @@ CREATE TABLE `ai_route_rules` (
   UNIQUE KEY `name_idx` (`name`),
   INDEX `idx_index` (`idx`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = 'AI路由规则表';
+
 -- create route_default_rules
 DROP TABLE IF EXISTS `route_default_rules`;
 CREATE TABLE `route_default_rules` (
@@ -296,9 +326,12 @@ CREATE TABLE `route_default_rules` (
 PRIMARY KEY (`id`),
 UNIQUE INDEX `product_id` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 comment = "默认转发规则信息";
+
+-- insert default user
 insert into users (id, name, password, scopes, created_at) values(1, 'admin', 'admin', 'System', now());
 insert into users (id, name, type, password, ticket, ticket_created_at, scopes, created_at) values (2, 'demo', 1, '', 'eT5QWkLhQmp6lO4NWxAc', now(), 'Product', now());
 insert into users (id, name, type, password, ticket, ticket_created_at, scopes, created_at) values (3, 'conf-agent', 1, '', 'c5QFb-MrlKktJbOid2M3', now(), 'System', now());
 insert into products (id, name, `description`, mail_list, contact_person, created_at) values (1, 'BFE', 'Build-in Product, User by System Manager', 'bfe@cncf.com', 'bfe', now());
 insert into products (id, name, `description`, mail_list, contact_person, created_at) values (2, 'AI_product', 'ai 产品线', '', '', now());
 insert into user_products (user_id, product_id, created_at, updated_at) values (2, 2, now(), now());
+

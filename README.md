@@ -34,86 +34,75 @@ AI Gateway consists of the following core components:
 
 ## Deployment Modes
 
-AI Gateway supports two deployment modes:
-
 | Mode | Command | Use Case |
 |---|---|---|
-| **Container** | `docker run` | Development, demo, small-scale deployment |
-| **Kubernetes** | `kubectl apply -k kubernetes/` | Production, cluster deployment |
-
-### Container (All-in-One Docker)
-
-Single container that bundles BFE + AI Gateway API + Conf Agent, with automatic database initialization.
-
-**Prerequisites**: Docker, MySQL 8, Redis 6.2
-
-```bash
-# Pull image
-docker pull ghcr.io/yf-networks/ai-gateway:latest
-
-# Prepare config files (see conf/ for templates)
-# Edit conf/ai_gateway_api.toml with your DB credentials
-
-# Start
-docker run -d --name ai-gateway \
-  -p 8080:8080 -p 8183:8183 \
-  -v $(pwd)/conf/ai_gateway_api.toml:/home/work/api-server/conf/ai_gateway_api.toml \
-  -v $(pwd)/conf/name_conf.data:/home/work/api-server/conf/name_conf.data \
-  -v $(pwd)/conf/name_conf.data:/home/work/bfe/conf/name_conf.data \
-  -v $(pwd)/conf/bfe.conf:/home/work/bfe/conf/bfe.conf \
-  ghcr.io/yf-networks/ai-gateway:latest
-```
-
-Access Dashboard: `http://localhost:8183` (admin / admin)
-
-### Kubernetes
-
-**Prerequisites**: kubectl >= 1.20, cluster admin permissions
-
-```bash
-# Deploy all components with one command
-kubectl apply -k kubernetes/
-
-# Verify
-kubectl get pods -n ai-gateway-system
-```
-
-Access Dashboard: `http://{NodeIP}:30183` (admin / admin)
-
-For complete deployment guide and architecture diagram, see the [Kubernetes documentation](./kubernetes/README.md).
+| **Container** | `docker compose up -d` | Development, demo, small-scale |
+| **Kubernetes** | `kubectl apply -k kubernetes/` | Production, cluster |
 
 ## Quick Start
 
-### 1. Clone
+### Docker Compose (Recommended — No Config Needed)
+
+`docker-compose.yml` integrates MySQL 8 + Redis 6.2 + AI Gateway. Configs are pre-set with Docker network DNS — works out of the box.
+
+| Container | DNS name | Port |
+|---|---|---|
+| MySQL 8 | `mysql.ai-gateway-system` | 3306 |
+| Redis 6.2 | `redis.ai-gateway-system` | 6379 |
+| AI Gateway | — | 8080, 8183 |
 
 ```bash
 git clone https://github.com/yf-networks/ai-gateway.git
 cd ai-gateway
+docker compose up -d
 ```
 
-### 2. Configure
+Dashboard: `http://localhost:8183` (admin / admin)
 
-Copy and edit the config files in `conf/`:
+**With test simulator** (validate end-to-end routing):
 
-| File | Purpose |
+```bash
+docker compose --profile test up -d
+```
+
+Adds `vllm-sim` (mock LLM backend, port 8000). Configure a forwarding rule in Dashboard to verify routing.
+
+> `vllm-sim` is for functional testing only. The compose MySQL has no persistent storage — uncomment `volumes` in `docker-compose.yml` for data persistence, or use an external MySQL in production.
+
+```bash
+# Operations
+docker compose stop                     # Stop all services
+docker compose start                    # Restart all services
+docker compose down                     # Stop and remove containers
+docker compose --profile test up -d     # Add simulator after initial deploy
+docker compose restart ai-gateway       # Restart after config changes
+```
+
+### Manual Deployment (External MySQL / Redis)
+
+If you have your own MySQL and Redis, configure and start the container manually:
+
+1. **Configure** — edit `conf/` files with your addresses:
+
+| File | Key settings |
 |---|---|
-| `conf/ai_gateway_api.toml` | Database, Redis, and API server settings |
-| `conf/bfe.conf` | BFE traffic gateway configuration |
-| `conf/name_conf.data` | Redis instance discovery (shared by API and BFE) |
+| `conf/ai_gateway_api.toml` | `Addr`, `User`, `Passwd` under `[Databases.bfe_db]` |
+| `conf/name_conf.data` | `Host`, `Port` for Redis instance |
+| `conf/bfe.conf` | BFE ports and modules (usually no changes needed) |
 
-Example `conf/ai_gateway_api.toml` (minimal changes):
+Example `conf/ai_gateway_api.toml`:
 
 ```toml
 [Databases.bfe_db]
-Addr   = "192.168.1.3:3306"      # MySQL address
-User   = "root"                  # MySQL user
-Passwd = "your_password"         # MySQL password
+Addr   = "192.168.1.3:3306"
+User   = "root"
+Passwd = "your_password"
 
 [RedisConf]
-Bns = "BFE.poc-redis-wx"         # Redis BNS name
+Bns = "BFE.poc-redis-wx"
 ```
 
-Example `conf/name_conf.data` (Redis instance):
+Example `conf/name_conf.data`:
 
 ```json
 {
@@ -128,55 +117,58 @@ Example `conf/name_conf.data` (Redis instance):
 }
 ```
 
-### 3. Choose deployment mode
+2. **Start**:
 
-- **Container**: See [Container section](#container-all-in-one-docker) above
-- **Kubernetes**: See [Kubernetes section](#kubernetes) above
+```bash
+docker run -d --name ai-gateway \
+  -p 8080:8080 -p 8183:8183 \
+  -v $(pwd)/conf/ai_gateway_api.toml:/home/work/api-server/conf/ai_gateway_api.toml \
+  -v $(pwd)/conf/name_conf.data:/home/work/api-server/conf/name_conf.data \
+  -v $(pwd)/conf/name_conf.data:/home/work/bfe/conf/name_conf.data \
+  -v $(pwd)/conf/bfe.conf:/home/work/bfe/conf/bfe.conf \
+  ghcr.io/yf-networks/ai-gateway:latest
+```
+
+Dashboard: `http://localhost:8183` (admin / admin)
+
+### Kubernetes
+
+```bash
+kubectl apply -k kubernetes/
+kubectl get pods -n ai-gateway-system
+```
+
+Dashboard: `http://{NodeIP}:30183` (admin / admin). See [K8s docs](./kubernetes/README.md) for details.
 
 ## Build from Source
 
-To build the all-in-one image from source components:
-
 ```bash
-# Build container image
-make docker-standalone
-
-# Build with debug tools (curl, vim, etc.)
-make docker-standalone VARIANT=debug
-
-# Multi-arch push
-make docker-standalone-push REGISTRY=ghcr.io/your-org
+make docker-standalone            # Build container image
+make docker-standalone VARIANT=debug  # With debug tools
+make docker-standalone-push REGISTRY=ghcr.io/your-org  # Multi-arch push
 ```
 
-**Build parameters**:
-
-| Parameter | Default | Description |
-|---|---|---|
-| `BFE_IMAGE` | `ghcr.io/bfenetworks/bfe:v1.8.2` | BFE image (provides bfe + conf-agent) |
-| `API_IMAGE` | `ghcr.io/yf-networks/ai-gateway-api:v0.0.2` | API server image (provides api-server + dashboard) |
-| `VARIANT` | `prod` | `prod` or `debug` |
+Build parameters are read from `VERSIONS.yaml` — no manual version configuration needed.
 
 ## Version Management
 
-This repository serves as the **product-level version entry point** for AI Gateway. The `VERSIONS.yaml` file defines the compatibility matrix between all sub-components:
+This repository is the **product-level version entry point**. `VERSIONS.yaml` defines the verified component versions:
 
 ```yaml
-version: 0.2.0
+version: v0.1.0
 components:
   bfe:
     version: v1.8.2
-    source: image
     image: ghcr.io/bfenetworks/bfe:v1.8.2
     provides:
       - bfe
       - conf-agent
   ai-gateway-api:
     version: v0.0.2
-    source: image
     image: ghcr.io/yf-networks/ai-gateway-api:v0.0.2
 ```
 
-Each product release corresponds to a verified combination of component versions. See `VERSIONS.yaml` for the full matrix.
+Update `VERSIONS.yaml` → rebuild → tag a new product release.
 
 ## Exposed Ports
 
@@ -190,7 +182,7 @@ Each product release corresponds to a verified combination of component versions
 
 ## Contributing
 
-Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development workflow and guidelines.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for development workflow and guidelines.
 
 ## License
 
