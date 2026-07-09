@@ -51,6 +51,13 @@ AI Gateway consists of the following core components:
 | Redis 6.2 | `redis.ai-gateway-system` | 6379 |
 | AI Gateway | — | 8080, 8183 |
 
+> **Prerequisite**: Docker Compose plugin. If `docker compose` is not available:
+> 1. Download the binary from https://github.com/docker/compose/releases
+> 2. Place it at `$HOME/.docker/cli-plugins/docker-compose`
+> 3. `chmod +x $HOME/.docker/cli-plugins/docker-compose`
+>
+> Or use standalone binary: `docker-compose up -d`
+
 ```bash
 git clone https://github.com/yf-networks/ai-gateway.git
 cd ai-gateway

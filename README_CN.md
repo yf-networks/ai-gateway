@@ -50,6 +50,13 @@ AI Gateway 包含如下核心组件：
 | MySQL 8 | `mysql.ai-gateway-system` | 3306 |
 | Redis 6.2 | `redis.ai-gateway-system` | 6379 |
 
+> **前置要求**：需要安装 Docker Compose 插件。如果 `docker compose` 不可用：
+> 1. 从 https://github.com/docker/compose/releases 下载对应版本
+> 2. 放入 `$HOME/.docker/cli-plugins/docker-compose`
+> 3. `chmod +x $HOME/.docker/cli-plugins/docker-compose`
+>
+> 或使用独立二进制：`docker-compose up -d`
+
 ```bash
 git clone https://github.com/yf-networks/ai-gateway.git
 cd ai-gateway

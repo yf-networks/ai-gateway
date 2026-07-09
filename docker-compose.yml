@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   mysql:
     image: ghcr.io/cc14514/mysql:8
