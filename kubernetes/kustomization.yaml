@@ -48,7 +48,7 @@ images:
 
   - name: ghcr.io/bfenetworks/service-controller
     newName: ghcr.io/bfenetworks/service-controller
-    newTag: v0.0.1
+    newTag: v1.0.0
 
   - name: ghcr.io/cc14514/mysql
     newName: ghcr.io/cc14514/mysql
