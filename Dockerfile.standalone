@@ -15,8 +15,8 @@
 ARG BFE_IMAGE=ghcr.io/bfenetworks/bfe:v1.8.2
 ARG API_IMAGE=ghcr.io/yf-networks/ai-gateway-api:v0.0.2
 
-FROM --platform=${BUILDPLATFORM} ${BFE_IMAGE} AS bfe
-FROM --platform=${BUILDPLATFORM} ${API_IMAGE} AS api
+FROM ${BFE_IMAGE} AS bfe
+FROM ${API_IMAGE} AS api
 
 FROM alpine:3.19
 
@@ -104,6 +104,14 @@ ConfFileName = "cluster_table.data"
 [[Reloaders.cluster_conf.NormalFileTasks]]
 ConfAPI = "/inner-api/v1/configs/gslb_data/gslb"
 ConfFileName = "gslb.data"
+
+[Reloaders.mod_ai_rate_limit]
+BFEReloadAPI    = "/reload/mod_ai_rate_limit"
+ReloadFile = "ai_rate_limit.data"
+CopyFiles       = ["ai_rate_limit.data", "mod_ai_rate_limit.conf"]
+[[Reloaders.mod_ai_rate_limit.NormalFileTasks]]
+ConfAPI         = "/inner-api/v1/configs/rate-limit-policy"
+ConfFileName    = "ai_rate_limit.data"
 EOF
 
 RUN cat > /home/work/entrypoint.sh <<'SCRIPT'
@@ -163,6 +171,11 @@ if [ ! -f /home/work/bfe/conf/name_conf.data ]; then
 fi
 ln -sf ../name_conf.data /home/work/bfe/conf/server_data_conf/name_conf.data
 
+TOKEN_RULE="/home/work/bfe/conf/mod_ai_token_auth/token_rule.data"
+if [ ! -s "$TOKEN_RULE" ] || ! grep -q '"QuotaPlans"' "$TOKEN_RULE" 2>/dev/null; then
+    echo '{"Config":{},"QuotaPlans":{},"Tokens":{},"Version":"0"}' > "$TOKEN_RULE"
+fi
+
 echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting api-server..."
 cd /home/work/api-server
 nohup ./api-server -c ./conf/ -sc ai_gateway_api.toml -l ./log \
@@ -182,6 +195,22 @@ nohup ./bfe -c ../conf/ -l ../log/ \
 BFE_PID=$!
 
 echo "[$(date +'%Y-%m-%d %H:%M:%S')] All processes started, waiting..."
+
+sleep 2
+for pid in $API_PID $CONF_PID $BFE_PID; do
+    if ! kill -0 "$pid" 2>/dev/null; then
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: process $pid exited, dumping logs..."
+        for lf in /home/work/api-server/log/stdout.log \
+                  /home/work/conf-agent/log/stdout.log \
+                  /home/work/bfe/log/stdout.log \
+                  /home/work/bfe/log/*.log \
+                  /home/work/bfe/log/*.wf; do
+            [ -f "$lf" ] && echo "=== $lf ===" && tail -20 "$lf"
+        done
+        exit 1
+    fi
+done
+
 wait
 SCRIPT
 

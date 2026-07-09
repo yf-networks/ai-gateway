@@ -59,6 +59,9 @@ data:
     # if false, client connection is shutdown disregard of http headers
     KeepAliveEnabled = true
 
+    # if true, support ai gateway mode
+    EnableAiGateway = true
+
     # timeout for graceful shutdown (maximum 300 sec)
     GracefulShutdownTimeout = 10
 
@@ -99,6 +102,10 @@ data:
     Modules = mod_unified_waf
     Modules = mod_ai_token_auth
     Modules = mod_body_process
+    Modules = mod_ai_rate_limit
+
+    Modules = mod_access_pb3
+    Modules = mod_session_sticky
 
     # interval for get diff of proxy-state
     MonitorInterval = 20
@@ -269,4 +276,11 @@ data:
     #ConfAPI             = "/inner-api/v1/configs/protocol/server_cert_conf"
     #ConfFileName        = "server_cert_conf.data"
     #ExtraFileJSONPaths  = ["$.Config.CertConf.*.ServerCertFile", "$.Config.CertConf.*.ServerKeyFile"]
-    
+
+    [Reloaders.mod_ai_rate_limit]
+    BFEReloadAPI    = "/reload/mod_ai_rate_limit"
+    ReloadFile = "ai_rate_limit.data"
+    CopyFiles       = ["ai_rate_limit.data", "mod_ai_rate_limit.conf"]
+    [[Reloaders.mod_ai_rate_limit.NormalFileTasks]]
+    ConfAPI         = "/inner-api/v1/configs/rate-limit-policy"
+    ConfFileName    = "ai_rate_limit.data"    

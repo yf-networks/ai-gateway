@@ -40,11 +40,11 @@ resources:
 images:
   - name: ghcr.io/bfenetworks/bfe
     newName: ghcr.io/bfenetworks/bfe
-    newTag: v1.8.2
+    newTag: v1.8.3
 
   - name: ghcr.io/yf-networks/ai-gateway-api
     newName: ghcr.io/yf-networks/ai-gateway-api
-    newTag: v0.0.2
+    newTag: v0.0.3
 
   - name: ghcr.io/bfenetworks/service-controller
     newName: ghcr.io/bfenetworks/service-controller

@@ -1,14 +1,14 @@
 version: v0.1.0
 components:
   bfe:
-    version: v1.8.2
+    version: v1.8.3
     source: image
-    image: ghcr.io/bfenetworks/bfe:v1.8.2
+    image: ghcr.io/yf-networks/bfe:v1.8.3
     provides:
       - bfe
       - conf-agent
 
   ai-gateway-api:
-    version: v0.0.2
+    version: v0.0.3
     source: image
-    image: ghcr.io/yf-networks/ai-gateway-api:v0.0.2
+    image: ghcr.io/yf-networks/ai-gateway-api:v0.0.3

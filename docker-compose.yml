@@ -12,8 +12,8 @@ services:
     #   - ./mysql-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "--password=root123", "--silent"]
-      interval: 5s
-      timeout: 3s
+      interval: 10s
+      timeout: 6s
       retries: 30
 
   redis:
@@ -23,16 +23,20 @@ services:
       - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
+      interval: 10s
+      timeout: 6s
       retries: 10
 
   ai-gateway:
-    image: ghcr.io/yf-networks/ai-gateway:latest
+    image: ghcr.io/yf-networks/ai-gateway:v0.1.0
     container_name: ai-gateway
     ports:
       - "8080:8080"
       - "8183:8183"
+      - "8284:8284"
+      - "8421:8421"
+      - "8443:8443"
+
     volumes:
       - ./conf/ai_gateway_api.toml:/home/work/api-server/conf/ai_gateway_api.toml
       - ./conf/name_conf.data:/home/work/api-server/conf/name_conf.data

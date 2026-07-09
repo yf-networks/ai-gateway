@@ -3,7 +3,7 @@
 
 [English](README.md) | 简体中文
 
-# AI Gateway
+# YF AI Gateway
 
 AI Gateway 是基于 [BFE](https://github.com/bfenetworks/bfe) 构建的开源 AI 流量网关，为多个 AI 模型提供商提供统一的 API 管理、认证、限流和智能路由能力，让开发者通过单一入口访问所有 AI 服务。
 

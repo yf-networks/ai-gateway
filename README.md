@@ -3,7 +3,7 @@
 
 [English](README.md) | [简体中文](README_CN.md)
 
-# AI Gateway
+# YF AI Gateway
 
 AI Gateway is an open-source AI traffic gateway built on top of [BFE](https://github.com/bfenetworks/bfe). It provides unified API management, authentication, rate limiting, and intelligent routing for multiple AI model providers, giving developers a single entry point for all AI services.
 
