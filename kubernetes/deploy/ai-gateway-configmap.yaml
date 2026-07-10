@@ -61,6 +61,15 @@ data:
     Format      = "[%D %T] %M"
     StdOut      = false
 
+    # exception log, for panic and critical errors
+    [Loggers.exception]
+    LogName     = "exception"
+    LogLevel    = "ERROR"
+    RotateWhen  = "MIDNIGHT"
+    BackupCount = 7
+    Format      = "[%D %T] [%L] [%S] %M"
+    StdOut      = false
+
     # ---------------------------------
     # Database Config
     # see https://github.com/go-sql-driver/mysql/blob/master/dsn.go#L37
