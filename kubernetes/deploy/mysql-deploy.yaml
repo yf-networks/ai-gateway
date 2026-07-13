@@ -116,11 +116,12 @@ spec:
       volumes:
         - name: mysql-data
           emptyDir: {}
-        # For persistent storage, replace the emptyDir above with:
-        # - name: mysql-data
+        # For persistent storage, create the PVC first:
+        #   kubectl apply -f deploy/mysql-pvc.yaml
+        # Then replace the emptyDir above with:
         #   persistentVolumeClaim:
         #     claimName: mysql-pvc
-        # Then uncomment "deploy/mysql-pvc.yaml" in kustomization.yaml.
+        # When uninstalling, the PVC will be preserved automatically.
 ---
 apiVersion: v1
 kind: ConfigMap

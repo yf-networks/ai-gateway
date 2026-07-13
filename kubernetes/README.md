@@ -92,7 +92,13 @@ The demo MySQL uses `emptyDir` storage (data lost on Pod restart). Production op
 
 **Option A — PersistentVolumeClaim** (keep in-cluster MySQL):
 
-In `deploy/mysql-deploy.yaml`, replace `emptyDir: {}` with the commented `persistentVolumeClaim` block. Then uncomment `deploy/mysql-pvc.yaml` in `kustomization.yaml`. Data is stored wherever your cluster's default StorageClass provisions it (`kubectl get storageclass` to check).
+```bash
+kubectl apply -f deploy/mysql-pvc.yaml     # create PVC (once)
+```
+
+Then in `deploy/mysql-deploy.yaml`, replace `emptyDir: {}` with the commented `persistentVolumeClaim` block.
+
+The PVC is NOT included in `kustomization.yaml`, so `kubectl delete -k .` will not delete it — your data survives uninstall / re-apply cycles.
 
 **Option B — External MySQL**:
 

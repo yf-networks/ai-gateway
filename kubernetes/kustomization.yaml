@@ -24,7 +24,6 @@ resources:
   - deploy/bfe-configmap.yaml
   - deploy/bfe-deploy.yaml
   - deploy/mysql-deploy.yaml
-  # - deploy/mysql-pvc.yaml          # uncomment for persistent MySQL storage
   - deploy/redis-deploy.yaml
   - deploy/service-controller-deploy.yaml
 

@@ -92,7 +92,13 @@ kubectl get svc -n ai-gateway-system
 
 **方案 A — 持久卷（PVC）**（保留集群内 MySQL）：
 
-在 `deploy/mysql-deploy.yaml` 中将 `emptyDir: {}` 替换为其下方注释中的 `persistentVolumeClaim` 块，并在 `kustomization.yaml` 中取消 `deploy/mysql-pvc.yaml` 的注释。数据存储位置取决于集群默认 StorageClass（`kubectl get storageclass` 可查看）。
+```bash
+kubectl apply -f deploy/mysql-pvc.yaml     # 创建 PVC（只需一次）
+```
+
+然后在 `deploy/mysql-deploy.yaml` 中将 `emptyDir: {}` 替换为其下方注释中的 `persistentVolumeClaim` 块。
+
+PVC 未加入 `kustomization.yaml`，因此 `kubectl delete -k .` 不会删除它——反复卸载重装数据不丢失。
 
 **方案 B — 外部 MySQL**：
 
