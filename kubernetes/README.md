@@ -88,10 +88,16 @@ Access Dashboard: `http://{NodeIP}:30183` (admin / admin)
 
 ## Using External Database
 
-The demo MySQL uses `emptyDir` storage. For production:
+The demo MySQL uses `emptyDir` storage (data lost on Pod restart). Production options:
+
+**Option A — PersistentVolumeClaim** (keep in-cluster MySQL):
+
+In `deploy/mysql-deploy.yaml`, replace `emptyDir: {}` with the commented `persistentVolumeClaim` block. Then uncomment `deploy/mysql-pvc.yaml` in `kustomization.yaml`. Data is stored wherever your cluster's default StorageClass provisions it (`kubectl get storageclass` to check).
+
+**Option B — External MySQL**:
 
 1. Run `db_ddl.sql` on your external MySQL instance
-2. Update database connection in `ai-gateway-configmap.yaml`
+2. Update database connection in `deploy/ai-gateway-configmap.yaml`
 3. Comment out `mysql-deploy.yaml` in `kustomization.yaml`
 
 ## Backend Service Requirements

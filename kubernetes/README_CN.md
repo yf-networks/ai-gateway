@@ -88,10 +88,16 @@ kubectl get svc -n ai-gateway-system
 
 ## 使用外部数据库
 
-演示用的 MySQL 使用 `emptyDir` 存储，生产环境建议：
+演示用的 MySQL 使用 `emptyDir` 存储（Pod 重启后数据丢失）。生产环境可选：
+
+**方案 A — 持久卷（PVC）**（保留集群内 MySQL）：
+
+在 `deploy/mysql-deploy.yaml` 中将 `emptyDir: {}` 替换为其下方注释中的 `persistentVolumeClaim` 块，并在 `kustomization.yaml` 中取消 `deploy/mysql-pvc.yaml` 的注释。数据存储位置取决于集群默认 StorageClass（`kubectl get storageclass` 可查看）。
+
+**方案 B — 外部 MySQL**：
 
 1. 在外部 MySQL 实例上执行 `db_ddl.sql`
-2. 修改 `ai-gateway-configmap.yaml` 中的数据库连接信息
+2. 修改 `deploy/ai-gateway-configmap.yaml` 中的数据库连接信息
 3. 在 `kustomization.yaml` 中注释掉 `mysql-deploy.yaml`
 
 ## 后端服务要求

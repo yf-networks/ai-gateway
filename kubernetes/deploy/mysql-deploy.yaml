@@ -116,6 +116,11 @@ spec:
       volumes:
         - name: mysql-data
           emptyDir: {}
+        # For persistent storage, replace the emptyDir above with:
+        # - name: mysql-data
+        #   persistentVolumeClaim:
+        #     claimName: mysql-pvc
+        # Then uncomment "deploy/mysql-pvc.yaml" in kustomization.yaml.
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -591,6 +596,13 @@ spec:
             - -c
             - |
               set -eu
+              echo "Checking if database is already initialized..."
+              TABLE_COUNT=$(mysql --protocol=tcp --connect-timeout=10 -h mysql.ai-gateway-system.svc.cluster.local -uroot --password="$MYSQL_ROOT_PASSWORD" -sN \
+                  -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='open_bfe' AND table_name='users';" 2>/dev/null || echo "0")
+              if [ "$TABLE_COUNT" -gt 0 ]; then
+                  echo "Database already initialized, skipping."
+                  exit 0
+              fi
               echo "Starting database initialization..."
               mysql --protocol=tcp --connect-timeout=10 -h mysql.ai-gateway-system.svc.cluster.local -uroot --password="$MYSQL_ROOT_PASSWORD" < /init-scripts/db_ddl.sql
               echo "Database initialization completed!"
