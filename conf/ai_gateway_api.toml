@@ -79,7 +79,7 @@ UILogo = "https://raw.githubusercontent.com/bfenetworks/bfe/develop/docs/images/
 # don't open it on production environment
 SkipTokenValidate = false
 # sql will be record to log file when this option be opend
-RecordSQL = false
+RecordSQL = true 
 # how long use must login again
 SessionExpireInDay = 10
 # static file path, when dynamic router not be matched, static file will be return if found

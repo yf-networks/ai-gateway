@@ -232,24 +232,16 @@ data:
     
     ReloadIntervalMs        = 5000
     
-    ConfServer              = "http://ai-gateway-api.ai-gateway-system.svc.cluster.local:8183"
+    ConfServer              = "http://127.0.0.1:8183"
     # Token 获取参考 https://github.com/bfenetworks/dashboard/blob/develop/docs/zh-cn/user-guide/system-view/user-management.md#token%E7%AE%A1%E7%90%86
     ConfTaskHeaders         = {"Authorization" = "Token c5QFb-MrlKktJbOid2M3"}
     ConfTaskTimeoutMs       = 1500
     
-    ExtraFileServer         = "http://ai-gateway-api.ai-gateway-system.svc.cluster.local:8183/inner-api/v1/configs/extra_files/"
+    ExtraFileServer         = "http://127.0.0.1:8183/inner-api/v1/configs/extra_files/"
     # Token 获取参考 https://github.com/bfenetworks/dashboard/blob/develop/docs/zh-cn/user-guide/system-view/user-management.md#token%E7%AE%A1%E7%90%86
     ExtraFileTaskHeaders    = {"Authorization" = "Token c5QFb-MrlKktJbOid2M3"}
     ExtraFileTaskTimeoutMs  = 1500
     
-    # reloader for mod_ai_token_auth, detail see https://www.bfe-networks.net/en_us/configuration/mod_ai_token_auth/
-    [Reloaders.mod_ai_token_auth]
-    BFEReloadAPI = "/reload/mod_ai_token_auth"
-    ReloadFile = "token_rule.data"
-    CopyFiles = ["token_rule.data", "mod_ai_token_auth.conf"]
-    [[Reloaders.mod_ai_token_auth.NormalFileTasks]]
-    ConfAPI = "/inner-api/v1/configs/mod-api-key"
-    ConfFileName = "token_rule.data"
     
     # reloader for server_data_config files, detail see https://www.bfe-networks.net/en_us/configuration/server_data_conf/host_rule.data/
     [Reloaders.server_data_conf]
@@ -269,18 +261,35 @@ data:
     ConfAPI         = "/inner-api/v1/configs/gslb_data/gslb"
     ConfFileName    = "gslb.data"
     
-    # # reloader for tls_conf files, detail see https://www.bfe-networks.net/en_us/configuration/tls_conf/server_cert_conf.data/
-    #[Reloaders.tls_conf]
-    #CopyFiles      = ["client_ca", "client_crl", "server_cert_conf.data", "session_ticket_key.data", "tls_rule_conf.data"]
-    #[[Reloaders.tls_conf.ExtraFileTasks]]
-    #ConfAPI             = "/inner-api/v1/configs/protocol/server_cert_conf"
-    #ConfFileName        = "server_cert_conf.data"
-    #ExtraFileJSONPaths  = ["$.Config.CertConf.*.ServerCertFile", "$.Config.CertConf.*.ServerKeyFile"]
-
+    
+    [Reloaders.mod_ai_token_auth]
+    BFEReloadAPI    = "/reload/mod_ai_token_auth"
+    ReloadFile = "token_rule.data"
+    CopyFiles       = ["token_rule.data", "mod_ai_token_auth.conf"]
+    [[Reloaders.mod_ai_token_auth.NormalFileTasks]]
+    ConfAPI         = "/inner-api/v1/configs/mod-api-key"
+    ConfFileName    = "token_rule.data"
+    
     [Reloaders.mod_ai_rate_limit]
     BFEReloadAPI    = "/reload/mod_ai_rate_limit"
     ReloadFile = "ai_rate_limit.data"
     CopyFiles       = ["ai_rate_limit.data", "mod_ai_rate_limit.conf"]
     [[Reloaders.mod_ai_rate_limit.NormalFileTasks]]
     ConfAPI         = "/inner-api/v1/configs/rate-limit-policy"
-    ConfFileName    = "ai_rate_limit.data"    
+    ConfFileName    = "ai_rate_limit.data"
+    
+    [Reloaders.mod_body_process]
+    BFEReloadAPI    = "/reload/mod_body_process"
+    ReloadFile = "body_process_rule.data"
+    CopyFiles       = ["body_process_rule.data", "mod_body_process.conf"]
+    [[Reloaders.mod_body_process.NormalFileTasks]]
+    ConfAPI         = "/inner-api/v1/configs/mod-body-process"
+    ConfFileName    = "body_process_rule.data"
+    
+    # # reloader for tls_conf files, detail see https://www.bfe-networks.net/en_us/configuration/tls_conf/server_cert_conf.data/
+    [Reloaders.tls_conf]
+    CopyFiles      = ["client_ca", "client_crl", "server_cert_conf.data", "session_ticket_key.data", "tls_rule_conf.data"]
+    [[Reloaders.tls_conf.ExtraFileTasks]]
+    ConfAPI             = "/inner-api/v1/configs/protocol/server_cert_conf"
+    ConfFileName        = "server_cert_conf.data"
+    ExtraFileJSONPaths  = ["$.Config.CertConf.*.ServerCertFile", "$.Config.CertConf.*.ServerKeyFile"]
