@@ -157,6 +157,17 @@ make docker-standalone-push REGISTRY=ghcr.io/your-org  # Multi-arch push
 
 Build parameters are read from `VERSIONS.yaml` — no manual version configuration needed.
 
+## Mirror Registry
+
+If `ghcr.io` is not directly accessible, replace image sources with a mirror (`ghcr.nju.edu.cn`):
+
+| Deployment | Config file | How to |
+|---|---|---|
+| Docker Compose | `docker-compose.yml` | Replace `image:` lines with your mirror registry |
+| Kubernetes | `kubernetes/kustomization.yaml` | Replace `newName:` in `images:` section |
+
+See comments in each file for examples.
+
 ## Version Management
 
 This repository is the **product-level version entry point**. `VERSIONS.yaml` defines the verified component versions:

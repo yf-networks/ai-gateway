@@ -154,6 +154,17 @@ make docker-standalone-push REGISTRY=ghcr.io/your-org  # 多架构推送
 
 构建参数从 `VERSIONS.yaml` 自动读取，无需手动配置版本号。
 
+## 镜像加速
+
+如果无法直接访问 `ghcr.io`，可将镜像源替换为国内镜像 `ghcr.nju.edu.cn`：
+
+| 部署方式 | 配置文件 | 操作 |
+|---|---|---|
+| Docker Compose | `docker-compose.yml` | 替换 `image:` 行中的 registry（如 `ghcr.nju.edu.cn/...`） |
+| Kubernetes | `kubernetes/kustomization.yaml` | 替换 `images:` 中的 `newName` |
+
+详见各文件中的注释示例。
+
 ## 版本管理
 
 本仓库是 AI Gateway 的**产品级版本入口**。`VERSIONS.yaml` 定义了经过验证的组件版本组合：

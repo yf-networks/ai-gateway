@@ -1,4 +1,9 @@
 services:
+  # Docker Compose mirror usage:
+  #   Replace image references from ghcr.io to your mirror registry.
+  #   Example (ghcr.io -> ghcr.nju.edu.cn):
+  #     image: ghcr.io/cc14514/mysql:8
+  #     → image: ghcr.nju.edu.cn/cc14514/mysql:8
   mysql:
     image: ghcr.io/cc14514/mysql:8
     container_name: mysql.ai-gateway-system
