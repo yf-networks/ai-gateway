@@ -64,6 +64,8 @@ cd ai-gateway
 docker compose up -d
 ```
 
+> **If you get "not a directory" mount errors**: ensure the `conf/` files exist. If any file under `conf/` is missing, Docker creates a directory placeholder, causing a mount conflict. Run `git status` and `git checkout conf/` to restore them.
+
 Dashboard: `http://localhost:8183` (admin / admin)
 
 **With test simulator** (validate end-to-end routing):

@@ -63,6 +63,8 @@ cd ai-gateway
 docker compose up -d
 ```
 
+> **如遇到 "not a directory" 挂载错误**：请确认 `conf/` 目录下的文件存在。如果缺少任何文件，Docker 会创建一个目录占位，导致挂载冲突。执行 `git status` 并用 `git checkout conf/` 恢复文件。
+
 访问 Dashboard：`http://localhost:8183`（admin / admin）
 
 **附带测试模拟器**（端到端路由验证）：
