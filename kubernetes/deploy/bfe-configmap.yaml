@@ -232,12 +232,12 @@ data:
     
     ReloadIntervalMs        = 5000
     
-    ConfServer              = "http://127.0.0.1:8183"
+    ConfServer              = "http://ai-gateway-api.ai-gateway-system.svc.cluster.local:8183"
     # Token 获取参考 https://github.com/bfenetworks/dashboard/blob/develop/docs/zh-cn/user-guide/system-view/user-management.md#token%E7%AE%A1%E7%90%86
     ConfTaskHeaders         = {"Authorization" = "Token c5QFb-MrlKktJbOid2M3"}
     ConfTaskTimeoutMs       = 1500
     
-    ExtraFileServer         = "http://127.0.0.1:8183/inner-api/v1/configs/extra_files/"
+    ExtraFileServer         = "http://ai-gateway-api.ai-gateway-system.svc.cluster.local:8183/inner-api/v1/configs/extra_files/"
     # Token 获取参考 https://github.com/bfenetworks/dashboard/blob/develop/docs/zh-cn/user-guide/system-view/user-management.md#token%E7%AE%A1%E7%90%86
     ExtraFileTaskHeaders    = {"Authorization" = "Token c5QFb-MrlKktJbOid2M3"}
     ExtraFileTaskTimeoutMs  = 1500
@@ -321,11 +321,11 @@ data:
   mod_kafka.conf: |
     [Basic]
     DataPath = kafka_config.data
-    OpenDebug = false
+    OpenDebug = true 
 
     [kafka]
     # Brokers = kafka1:9092,kafka2:9092
-    Brokers = kafka.ai-gateway-system:9092
+    Brokers = kafka.ai-gateway-system.svc.cluster.local:9092
 
     # target topic
     Topic = bfe_ai_log

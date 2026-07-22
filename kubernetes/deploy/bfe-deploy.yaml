@@ -43,7 +43,7 @@ spec:
         - name: monitor
           containerPort: 8421
           protocol: TCP
-        - name: log-reader-monitor
+        - name: lr-monitor
           containerPort: 8992
           protocol: TCP
         volumeMounts:
