@@ -174,12 +174,12 @@ services:
         done
         echo "FE ready, waiting for FE to be fully initialized..."
         sleep 10
-        echo "Waiting for BE to be registered..."
+        echo "Waiting for BE to be fully ready..."
         while true; do
-          BE_ALIVE=$(mysql -h doris-fe.ai-gateway-system -P 9030 -uroot -sN \
-            -e "SHOW BACKENDS" 2>/dev/null | grep -c "true" || echo "0")
-          [ "$$BE_ALIVE" -gt 0 ] && break
-          echo "  BE not registered yet, retrying in 5s..."
+          BE_OK=$(mysql -h doris-fe.ai-gateway-system -P 9030 -uroot -sN \
+            -e "SHOW BACKENDS" 2>/dev/null | tail -1 | cut -f10,15)
+          echo "$$BE_OK" | grep -q "true" && break
+          echo "  BE storage not ready yet, retrying in 5s..."
           sleep 5
         done
         echo "BE ready, checking initialization..."
