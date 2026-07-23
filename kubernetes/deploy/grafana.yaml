@@ -291,7 +291,7 @@ data:
           "targets": [{
             "dataset": "bfe_observability", "datasource": { "type": "mysql", "uid": "${DS_DORIS}" },
             "editorMode": "builder", "format": "table",
-            "rawSql": "SELECT log_time, logid, ai_apikey, ai_requested_model, ai_mapped_model, res_status_code, err_code FROM bfe_ai_request_log WHERE ai_apikey IN ($apikey) AND ai_mapped_model IN ($model) ORDER BY log_time DESC LIMIT 100",
+            "rawSql": "SELECT log_time, logid, ai_apikey, ai_requested_model, ai_mapped_model, res_status_code, err_code FROM bfe_ai_request_log WHERE log_time >= $__timeFrom() AND log_time < $__timeTo() AND ai_apikey IN ($apikey) AND ai_mapped_model IN ($model) ORDER BY log_time DESC LIMIT 100",
             "refId": "A", "table": "bfe_ai_request_log"
           }],
           "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "log_time" }] },

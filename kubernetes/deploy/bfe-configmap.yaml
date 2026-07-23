@@ -61,6 +61,8 @@ data:
 
     # if true, support ai gateway mode
     EnableAiGateway = true
+    # if true, will estimate token usage if usage is not available in response
+    EstimateToken = false
 
     # timeout for graceful shutdown (maximum 300 sec)
     GracefulShutdownTimeout = 10
