@@ -41,11 +41,16 @@ RUN set -ex; \
     && mkdir -p /home/work/bfe/conf \
     && mkdir -p /home/work/bfe/log \
     && mkdir -p /home/work/conf-agent/conf \
-    && mkdir -p /home/work/conf-agent/log
+    && mkdir -p /home/work/conf-agent/log \
+    && mkdir -p /home/work/log-reader/bin \
+    && mkdir -p /home/work/log-reader/conf/mod_kafka \
+    && mkdir -p /home/work/log-reader/log
 
 COPY --from=bfe /home/work/bfe/bin/bfe /home/work/bfe/bin/bfe
 COPY --from=bfe /home/work/bfe/conf /home/work/bfe/conf
 COPY --from=bfe /home/work/conf-agent/conf-agent /home/work/conf-agent/conf-agent
+COPY --from=bfe /home/work/log-reader/bin/log-reader /home/work/log-reader/bin/log-reader
+COPY --from=bfe /home/work/log-reader/conf/ /home/work/log-reader/conf/
 
 COPY --from=api /home/work/api-server/api-server /home/work/api-server/api-server
 COPY --from=api /home/work/api-server/conf /home/work/api-server/conf
@@ -146,6 +151,7 @@ set -e
 
 API_PID=""
 CONF_PID=""
+LR_PID=""
 BFE_PID=""
 
 cleanup() {
@@ -156,6 +162,9 @@ cleanup() {
     fi
     if [ -n "$CONF_PID" ]; then
         kill -TERM "$CONF_PID" 2>/dev/null || true
+    fi
+    if [ -n "$LR_PID" ]; then
+        kill -TERM "$LR_PID" 2>/dev/null || true
     fi
     if [ -n "$BFE_PID" ]; then
         kill -TERM "$BFE_PID" 2>/dev/null || true
@@ -214,6 +223,12 @@ nohup ./conf-agent -c ./conf \
     </dev/null >./log/stdout.log 2>&1 &
 CONF_PID=$!
 
+echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting log-reader..."
+cd /home/work/log-reader
+nohup ./bin/log-reader -c ./conf -l ./log \
+    </dev/null >./log/stdout.log 2>&1 &
+LR_PID=$!
+
 echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting bfe..."
 cd /home/work/bfe/bin
 nohup ./bfe -c ../conf/ -l ../log/ \
@@ -223,11 +238,12 @@ BFE_PID=$!
 echo "[$(date +'%Y-%m-%d %H:%M:%S')] All processes started, waiting..."
 
 sleep 2
-for pid in $API_PID $CONF_PID $BFE_PID; do
+for pid in $API_PID $CONF_PID $LR_PID $BFE_PID; do
     if ! kill -0 "$pid" 2>/dev/null; then
         echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: process $pid exited, dumping logs..."
         for lf in /home/work/api-server/log/stdout.log \
                   /home/work/conf-agent/log/stdout.log \
+                  /home/work/log-reader/log/stdout.log \
                   /home/work/bfe/log/stdout.log \
                   /home/work/bfe/log/*.log \
                   /home/work/bfe/log/*.wf; do
@@ -242,7 +258,7 @@ SCRIPT
 
 RUN chmod +x /home/work/entrypoint.sh
 
-EXPOSE 8080 8443 8421 8183 8284
+EXPOSE 8080 8443 8421 8183 8284 8992
 
 WORKDIR /home/work
 ENTRYPOINT ["/sbin/tini", "--"]
