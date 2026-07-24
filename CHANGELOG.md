@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.1.2] — 2026-07-24
+## [v0.2.0] — 2026-07-24
 
 ### Updated Components
 
