@@ -1090,7 +1090,7 @@
         "y": 71
       },
       "links": [],
-      "title": "认证拒绝明细 (UNNEST)",
+      "title": "认证拒绝明细",
       "type": "table",
       "datasource": "Doris",
       "targets": [
@@ -1102,7 +1102,7 @@
           },
           "editorMode": "builder",
           "format": "table",
-          "rawSql": "SELECT log_time, logid, ai_apikey, ai_auth_reject_reason, plan FROM bfe_ai_request_log CROSS JOIN UNNEST(ai_auth_reject_quota_plans) AS plan WHERE log_time >= $__timeFrom() AND log_time < $__timeTo() AND ai_auth_reject_reason IS NOT NULL AND ai_auth_reject_reason != '' AND ai_apikey IN ($apikey) ORDER BY log_time DESC LIMIT 100",
+          "rawSql": "SELECT log_time, logid, ai_apikey, ai_auth_reject_reason, ai_auth_reject_quota_plans FROM bfe_ai_request_log WHERE log_time >= $__timeFrom() AND log_time < $__timeTo() AND ai_auth_reject_reason IS NOT NULL AND ai_auth_reject_reason != '' AND ai_apikey IN ($apikey) ORDER BY log_time DESC LIMIT 100",
           "refId": "A",
           "table": "bfe_ai_request_log"
         }
