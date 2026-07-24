@@ -291,7 +291,7 @@ CREATE TABLE api_keys (
   INDEX idx_entity_id (entity_id),
   INDEX idx_quota_plan_id (quota_plan_id),
   INDEX idx_rate_limit_policy_id (rate_limit_policy_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 comment = "api keys"; 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 comment = "api keys"; 
 
 -- create api_key_tokens
 DROP TABLE IF EXISTS `api_key_tokens`;
